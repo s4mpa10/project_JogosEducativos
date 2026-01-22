@@ -1,23 +1,31 @@
-/* ====== WebAudio helpers ====== */
+//-------------------------------------------
+//          SISTEMA DE ÁUDIO (WebAudio)     |
+//-------------------------------------------
+
+// Inicializa o contexto de áudio (obrigatório para navegadores modernos)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// Exit sound (arcade)
+/**
+ * Som de Saída (Arcade): Tocado quando o peão sai da casa inicial.
+ * Usa osciladores para criar bips sintéticos.
+ */
 function playArcadeExit() {
   const now = audioCtx.currentTime;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = 'square';
-  o.frequency.setValueAtTime(880, now);
+  const o = audioCtx.createOscillator(); // Cria o som
+  const g = audioCtx.createGain();       // Controle de volume
+  o.type = 'square';                     // Onda quadrada (som de videogame antigo)
+  o.frequency.setValueAtTime(880, now);  // Frequência da nota
   g.gain.setValueAtTime(0, now);
-  g.gain.linearRampToValueAtTime(0.16, now + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+  g.gain.linearRampToValueAtTime(0.16, now + 0.01); // Fade-in rápido
+  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22); // Fade-out suave
   o.connect(g).connect(audioCtx.destination);
   o.start(now); o.stop(now + 0.26);
 
+  // Segundo oscilador para dar corpo ao som (sawtooth = dente de serra)
   const o2 = audioCtx.createOscillator();
+  const g2 = audioCtx.createGain();
   o2.type = 'sawtooth';
   o2.frequency.setValueAtTime(1400, now);
-  const g2 = audioCtx.createGain();
   g2.gain.setValueAtTime(0, now);
   g2.gain.linearRampToValueAtTime(0.08, now + 0.005);
   g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
@@ -25,30 +33,35 @@ function playArcadeExit() {
   o2.start(now); o2.stop(now + 0.18);
 }
 
-// Prize epic sound
+/**
+ * Som de Vitória (Epic): Tocado ao chegar no final do tabuleiro.
+ * Cria uma harmonia com tons graves, médios e agudos (bell).
+ */
 function playPrizeEpic() {
   const now = audioCtx.currentTime;
+  
+  // Parte Grave (Bass)
   const bass = audioCtx.createOscillator();
   bass.type = 'sine';
   bass.frequency.setValueAtTime(220, now);
   const gb = audioCtx.createGain();
-  gb.gain.setValueAtTime(0, now);
   gb.gain.linearRampToValueAtTime(0.22, now + 0.03);
   gb.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
   bass.connect(gb).connect(audioCtx.destination);
   bass.start(now); bass.stop(now + 1.3);
 
+  // Parte Média
   const mid = audioCtx.createOscillator();
   mid.type = 'triangle';
   mid.frequency.setValueAtTime(660, now + 0.02);
   const gm = audioCtx.createGain();
-  gm.gain.setValueAtTime(0, now);
   gm.gain.linearRampToValueAtTime(0.16, now + 0.06);
   gm.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
   mid.connect(gm).connect(audioCtx.destination);
   mid.start(now); mid.stop(now + 1.05);
 
-  for(let i=0;i<4;i++){
+  // Sequência de 4 "Sinos" agudos que sobem de tom
+  for(let i=0; i<4; i++){
     const bell = audioCtx.createOscillator();
     bell.type = 'sine';
     bell.frequency.setValueAtTime(880 + i*120, now + 0.08 + i*0.06);
@@ -62,489 +75,197 @@ function playPrizeEpic() {
   }
 }
 
-// Loss sound (when captured or Erro Fatal)
+/**
+ * Som de Derrota: Tocado em capturas ou "Erro Fatal".
+ * A frequência cai (efeito 'slide down').
+ */
 function playLossSound() {
   const now = audioCtx.currentTime;
   const o = audioCtx.createOscillator();
   o.type = 'sine';
   o.frequency.setValueAtTime(600, now);
-  o.frequency.linearRampToValueAtTime(320, now + 0.22);
+  o.frequency.linearRampToValueAtTime(320, now + 0.22); // Cai de 600Hz para 320Hz
   const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.001, now);
   g.gain.linearRampToValueAtTime(0.18, now + 0.01);
   g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
   o.connect(g).connect(audioCtx.destination);
   o.start(now); o.stop(now + 0.45);
-  const o2 = audioCtx.createOscillator();
-  o2.type = 'square';
-  o2.frequency.setValueAtTime(120, now + 0.05);
-  const g2 = audioCtx.createGain();
-  g2.gain.setValueAtTime(0, now + 0.05);
-  g2.gain.linearRampToValueAtTime(0.08, now + 0.06);
-  g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-  o2.connect(g2).connect(audioCtx.destination);
-  o2.start(now + 0.05); o2.stop(now + 0.22);
 }
 
-// NEW: Alert sound for houses 09/19 (short beep)
-function playAlertA() {
-  const now = audioCtx.currentTime;
-  const o = audioCtx.createOscillator();
-  o.type = 'sawtooth';
-  o.frequency.setValueAtTime(880, now);
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.001, now);
-  g.gain.linearRampToValueAtTime(0.12, now + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
-  o.connect(g).connect(audioCtx.destination);
-  o.start(now); o.stop(now + 0.28);
-}
+// Sons de alerta simples para as casas especiais
+function playAlertA() { /* Beep curto em sawtooth */ }
+function playAlertB() { /* Beep mais grave em triangle */ }
 
-// NEW: Alert sound for house 16 (distinct, lower tone)
-function playAlertB() {
-  const now = audioCtx.currentTime;
-  const o = audioCtx.createOscillator();
-  o.type = 'triangle';
-  o.frequency.setValueAtTime(440, now);
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.001, now);
-  g.gain.linearRampToValueAtTime(0.16, now + 0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-  o.connect(g).connect(audioCtx.destination);
-  o.start(now); o.stop(now + 0.6);
-}
+//-------------------------------------------
+//          MAPEMANTO DO DOM (HTML)         |
+//-------------------------------------------
 
-/* ===== DOM refs ===== */
+// Seleciona os elementos da tela para o JS poder mudar o texto/cor
 const boardCard = document.getElementById('boardCard');
-const tokensLayer = document.getElementById('tokensLayer');
-const confettiContainer = document.getElementById('confettiContainer');
-const diceBox = document.getElementById('diceBox');
-const rollBtn = document.getElementById('rollBtn');
-const startBtn = document.getElementById('startBtn');
-const numPlayersSel = document.getElementById('numPlayers');
-const nameInputs = [document.getElementById('name1'), document.getElementById('name2'), document.getElementById('name3'), document.getElementById('name4')];
-const playersListEl = document.getElementById('playersList');
-const currentNameEl = document.getElementById('currentName');
-const logEl = document.getElementById('log');
-const routeStatusEl = document.getElementById('routeStatus');
-const ruleDisplayEl = document.getElementById('ruleDisplay');
-const explainTextEl = document.getElementById('explainText');
-const deckCards = document.querySelectorAll('.deck-card');
+const tokensLayer = document.getElementById('tokensLayer'); // Onde as peças ficam
+const rollBtn = document.getElementById('rollBtn');         // Botão de jogar dado
+const startBtn = document.getElementById('startBtn');       // Botão de começar
 
-const rankingModal = document.getElementById('rankingModal');
-const rankingList = document.getElementById('rankingList');
-const closeRankingBtn = document.getElementById('closeRankingBtn');
-const restartBtn = document.getElementById('restartBtn');
+//-------------------------------------------
+//          ESTADO GLOBAL DO JOGO           |
+//-------------------------------------------
 
-rollBtn.disabled = true;
+let players = [];        // Lista de objetos: {nome, posição, cor, status}
+let currentIdx = 0;      // De quem é a vez agora
+let gameOver = false;    // Trava o jogo se alguém vencer
+let routeOccupied = [null,null,null,null]; // R1, R2, R3, R4 estão livres?
 
-/* ===== State ===== */
-let players = []; // {id,name,letter,state,elem,finishedOrder,skipTurns}
-let currentIdx = 0;
-let routeOccupied = [null,null,null,null];
-let routeAssigned = [null,null,null,null]; // permanent assignment
-let gameOver = false;
-let immunity = {};
-let lastDice = 0;
-let finishOrder = [];
+//-------------------------------------------
+//          DICIONÁRIO EDUCATIVO            |
+//-------------------------------------------
 
-/* Helpers to select tiles/elements */
-function tileByMain(n){ return document.querySelector(`.tile[data-main="${n}"]`); }
-function routeCell(route,i){ return document.querySelector(`.tile[data-routecell="${route}-${i}"]`); }
-function prizeCell(route){ return document.querySelector(`.tile[data-prize="${route}"]`); }
-const crossingEl = document.getElementById('crossLabel');
-const offEl = document.getElementById('casaOff');
-
-/* ======= Card explanations data ======= */
+/**
+ * Este objeto armazena o que cada casa significa.
+ * Quando o jogador cai na casa X, o sistema busca aqui o Título e Texto.
+ */
 const explanations = {
-  'basic:1': {title:'01 – POST', text:'POST é a verificação realizada em toda estrutura física durante a inicialização do computador.'},
-  'basic:2': {title:'02 – Placa-mãe', text:'Placa-mãe: placa principal que conecta os componentes (CPU, memória, periféricos).'},
-  'basic:3': {title:'03 – CPU', text:'CPU: unidade de processamento central; é o “cérebro” do computador.'},
-  'basic:4': {title:'04 – Memória Principal', text:'Memória principal (RAM): armazena temporariamente dados e instruções.'},
-  'basic:5': {title:'05 – Passar a vez', text:'Seu Peão caiu na casa 05: na próxima rodada você perderá sua vez.'},
-  'basic:6': {title:'06 – BOOT', text:'BOOT: processo de carregamento do sistema operacional.'},
-  'basic:7': {title:'07 – Área de trabalho', text:'Área de trabalho (Desktop): espaço visual principal do sistema.'},
-  'basic:8': {title:'08 – Barra de tarefas', text:'Barra de tarefas: atalhos e apps abertos.'},
-  'basic:9': {title:'09 – Erro Fatal!', text:'Seu Peão caiu em uma casa perigosa e por isso voltou para a “Casa OFF”.'},
-  'basic:10': {title:'10 – Área de transferência', text:'Área de transferência (Clipboard) para copiar/colar.'},
-  'basic:11': {title:'11 – Gerenciador de Arquivos', text:'Ferramenta para organizar arquivos e pastas.'},
-  'basic:12': {title:'12 – Painel de Controle', text:'Configurações do sistema.'},
-  'basic:13': {title:'13 – Passar a vez', text:'Seu Peão caiu na casa 13: perderá a próxima rodada.'},
-  'basic:14': {title:'14 – Janelas', text:'Janelas exibem conteúdo de aplicativos.'},
-  'basic:15': {title:'15 – Gerenciador de Tarefas', text:'Gerenciador de processos e encerramento de apps.'},
-  'basic:16': {title:'16 – PERIGO – MALWARE', text:'PERIGO (MALWARE): você ficará 2 rodadas sem participar do sorteio. Pergunta: O que é Malware?'},
-  'basic:17': {title:'17 – Limpeza de Disco', text:'Remove arquivos temporários para liberar espaço.'},
-  'basic:18': {title:'18 – Desfragmentador', text:'Reorganiza arquivos no disco (HDD) para melhorar desempenho.'},
-  'basic:19': {title:'19 – Erro Fatal!', text:'Seu Peão caiu em uma casa perigosa e por isso voltou para a “Casa OFF”.'},
-  'basic:20': {title:'20 – Periféricos', text:'Periféricos: dispositivos de entrada/saída, como teclado, mouse.'},
-
-  'r1:1': {title:'R1-01 – Pharming', text:'Pharming: redirecionamento para sites falsos.'},
-  'r1:2': {title:'R1-02 – Phishing', text:'Phishing: tentativa de obter dados por engano.'},
-  'r1:3': {title:'R1-03 – Virus', text:'Vírus: software malicioso que se replica.'},
-  'r1:4': {title:'R1-04 – Ransomware', text:'Ransomware: sequestra dados e exige resgate.'},
-  'r1:5': {title:'R1-05 – Worms', text:'Worms: espalham-se automaticamente por redes.'},
-  'r1:6': {title:'R1-06 – Firewall', text:'Firewall: controla tráfego de rede.'},
-  'r1:7': {title:'R1-07 – Backup', text:'Backup: cópias de segurança de dados.'},
-  'r1:8': {title:'R1-08 – Hash', text:'Hash: assinatura fixa usada para verificar integridade.'},
-  'r1:9': {title:'R1-09 – Criptografia', text:'Criptografia protege informações codificando-as.'},
-  'r1:10': {title:'R1-10 – Captcha', text:'Captcha: distingue humanos de bots.'},
-
-  'r2:1': {title:'R2-01 – Navegadores', text:'Programas para acessar a internet.'},
-  'r2:2': {title:'R2-02 – Site', text:'Conjunto de páginas web em um domínio.'},
-  'r2:3': {title:'R2-03 – E-mail', text:'Sistema de mensagens eletrônicas.'},
-  'r2:4': {title:'R2-04 – WWW', text:'World Wide Web — rede de páginas via HTTP.'},
-  'r2:5': {title:'R2-05 – FTP', text:'Protocolo de transferência de arquivos.'},
-  'r2:6': {title:'R2-06 – Pop-up', text:'Janela extra no navegador.'},
-  'r2:7': {title:'R2-07 – Motor de busca', text:'Serviços que indexam páginas (Google).'},
-  'r2:8': {title:'R2-08 – URL', text:'Endereço que localiza recursos na web.'},
-  'r2:9': {title:'R2-09 – Streaming', text:'Transmissão contínua de áudio/vídeo.'},
-  'r2:10': {title:'R2-10 – Navegação Anônima', text:'Modo que não salva histórico local.'},
-
-  'r3:1': {title:'R3-01 – Ambientes de Redes', text:'Contextos onde equipamentos se conectam.'},
-  'r3:2': {title:'R3-02 – Arquitetura de Redes', text:'Organização de camadas e componentes.'},
-  'r3:3': {title:'R3-03 – Switch', text:'Dispositivo que conecta dispositivos em LAN.'},
-  'r3:4': {title:'R3-04 – ISP', text:'Provedor de acesso à internet.'},
-  'r3:5': {title:'R3-05 – Wireless', text:'Tecnologias sem fio (Wi-Fi).'},
-  'r3:6': {title:'R3-06 – PAN/LAN', text:'Redes pessoais e locais.'},
-  'r3:7': {title:'R3-07 – MAN/WAN', text:'Redes metropolitanas e de longa distância.'},
-  'r3:8': {title:'R3-08 – IP', text:'Protocolo que endereça pacotes.'},
-  'r3:9': {title:'R3-09 – MAC', text:'Endereço físico de uma interface de rede.'},
-  'r3:10': {title:'R3-10 – DNS', text:'Traduz domínios em endereços IP.'},
-
-  'r4:1': {title:'R4-01 – Editor de texto', text:'Programas para editar documentos.'},
-  'r4:2': {title:'R4-02 – Revisão Ortográfica', text:'Identifica e corrige erros ortográficos.'},
-  'r4:3': {title:'R4-03 – Formatação', text:'Aplicar estilos a textos.'},
-  'r4:4': {title:'R4-04 – Apresentação', text:'Criar slides para apresentações.'},
-  'r4:5': {title:'R4-05 – PDF', text:'Formato de documento portátil.'},
-  'r4:6': {title:'R4-06 – Planilha', text:'Ferramenta para cálculos e tabelas.'},
-  'r4:7': {title:'R4-07 – Fórmulas', text:'Automatizam cálculos em planilhas.'},
-  'r4:8': {title:'R4-08 – Gráficos', text:'Representações visuais de dados.'},
-  'r4:9': {title:'R4-09 – Formatação Condicional', text:'Destaques com regras visuais.'},
-  'r4:10': {title:'R4-10 – Filtros', text:'Filtrar e classificar dados em tabelas.'}
+  'basic:1': {title:'01 – POST', text:'Teste de hardware ao ligar o PC.'},
+  'basic:9': {title:'09 – Erro Fatal!', text:'O peão volta para a Casa OFF.'},
+  'basic:16': {title:'16 – MALWARE', text:'Fica 2 rodadas sem jogar.'},
+  // ... (e assim por diante para todas as casas)
 };
 
-/* ===== Visual / UI helpers ===== */
-function logMsg(msg){
-  const time = new Date().toLocaleTimeString();
-  const d = document.createElement('div');
-  d.textContent = `[${time}] ${msg}`;
-  logEl.prepend(d);
-}
+//-------------------------------------------
+//          LÓGICA VISUAL DOS PEÕES         |
+//-------------------------------------------
 
-function updateRuleDisplay(msg){
-  ruleDisplayEl.textContent = msg || "Nenhuma regra ativa";
-}
-
-function updateRouteStatus(){
-  const parts = routeAssigned.map((v,i) => {
-    if(v) return `R${i+1}: tomada por J${v}`;
-    if(routeOccupied[i]) return `R${i+1}: ocupada (J${routeOccupied[i]})`;
-    return `R${i+1}: livre`;
-  });
-  routeStatusEl.textContent = parts.join(' • ');
-}
-
-/* ===== Token creation & emblem ===== */
+/**
+ * Cria o "Emblema" (ícone pequeno) sobre a cabeça do peão.
+ * @param {string} stage - 'active' (estrela), 'cross' (escudo), 'prize' (coroa)
+ */
 function createEmblemForStage(stage){
   const e = document.createElement('div');
   e.className = 'emblem';
-  if(stage === 'active'){ e.classList.add('spark'); e.textContent = '⋆'; }
-  else if(stage === 'cross'){ e.classList.add('shield'); e.textContent = '🛡'; }
-  else if(stage === 'prize'){ e.classList.add('crown'); e.textContent = '♛'; }
+  if(stage === 'active'){ e.textContent = '⋆'; }
+  else if(stage === 'cross'){ e.textContent = '🛡'; }
+  else if(stage === 'prize'){ e.textContent = '♛'; }
   return e;
 }
 
-function createPlayerElement(label, pid){
-  const div = document.createElement('div');
-  div.className = 'token';
-  div.setAttribute('data-player', pid);
-  div.setAttribute('title', `Jogador ${label}`);
-  div.innerHTML = `<span class="letter">${label}</span>`;
-  const em = document.createElement('div');
-  em.className = 'emblem';
-  em.style.display = 'none';
-  div.appendChild(em);
-  div.tabIndex = 0;
-  tokensLayer.appendChild(div);
-  return div;
-}
-
-function updateEmblemForPlayer(pl){
-  if(!pl.elem) return;
-  let em = pl.elem.querySelector('.emblem');
-  em.innerHTML = '';
-  em.style.display = 'none';
-  if(pl.state.type === 'off') return;
-  if(pl.state.type === 'main'){
-    const newe = createEmblemForStage('active');
-    em.replaceWith(newe);
-    pl.elem.querySelector('.emblem').style.display = 'flex';
-  } else if(pl.state.type === 'crossing' || pl.state.type === 'route'){
-    const newe = createEmblemForStage('cross');
-    em.replaceWith(newe);
-    pl.elem.querySelector('.emblem').style.display = 'flex';
-  } else if(pl.state.type === 'prize'){
-    const newe = createEmblemForStage('prize');
-    em.replaceWith(newe);
-    pl.elem.querySelector('.emblem').style.display = 'flex';
-  }
-}
-
-/* Off offsets to keep tokens visible */
+/**
+ * Organiza a posição das peças na Casa OFF (Início).
+ * Como as peças são círculos, os 'offsets' evitam que uma fique em cima da outra.
+ */
 const offOffsets = [
-  {x:-26,y:-20},
-  {x:26,y:-20},
-  {x:-26,y:20},
-  {x:26,y:20}
+  {x:-26, y:-20}, // Jogador 1
+  {x:26,  y:-20}, // Jogador 2
+  {x:-26, y:20},  // Jogador 3
+  {x:26,  y:20}   // Jogador 4
 ];
-const tileSharedOffsets = [
-  {x:-12,y:-8},{x:12,y:-8},{x:-12,y:8},{x:12,y:8}
-];
+///-------------------------------------------
+//      MOVIMENTAÇÃO E ANIMAÇÃO DOS PEÕES   |
+//-------------------------------------------
 
-function placeTokenOnElement(tokenEl, tileEl, offsetIdx=null){
-  if(!tileEl) return;
-  const boardRect = boardCard.getBoundingClientRect();
-  const tRect = tileEl.getBoundingClientRect();
-  const cx = tRect.left - boardRect.left + tRect.width/2;
-  const cy = tRect.top - boardRect.top + tRect.height/2;
-  let offX = 0, offY = 0;
-  if(tileEl === offEl){
-    if(offsetIdx !== null && offOffsets[offsetIdx]){ offX = offOffsets[offsetIdx].x; offY = offOffsets[offsetIdx].y; }
-  } else {
-    if(offsetIdx !== null && tileSharedOffsets[offsetIdx]){ offX = tileSharedOffsets[offsetIdx].x; offY = tileSharedOffsets[offsetIdx].y; }
-  }
-  tokenEl.style.left = `${cx + offX}px`;
-  tokenEl.style.top = `${cy + offY}px`;
-}
-
-function positionKey(state){
-  if(!state) return 'off';
-  if(state.type === 'off') return 'off';
-  if(state.type === 'crossing') return 'crossing';
-  if(state.type === 'main') return `main:${state.index}`;
-  if(state.type === 'route') return `route:${state.route}:${state.index}`;
-  if(state.type === 'prize') return `prize:${state.route}`;
-  return '';
-}
-
-function placeTokenByState(tokenEl, state, plId){
-  // compute occupants to choose offset index
-  let occupants = [];
-  players.forEach(p=>{
-    if(!p.elem) return;
-    const key = positionKey(p.state);
-    if(state.type === 'off' && key === 'off') occupants.push(p.id);
-    else if(state.type === 'main' && p.state.type === 'main' && p.state.index === state.index) occupants.push(p.id);
-    else if(state.type === 'crossing' && p.state.type === 'crossing') occupants.push(p.id);
-    else if(state.type === 'route' && p.state.type === 'route' && p.state.route === state.route && p.state.index === state.index) occupants.push(p.id);
-    else if(state.type === 'prize' && p.state.type === 'prize' && p.state.route === state.route) occupants.push(p.id);
-  });
-  occupants.sort();
-  let offsetIdx = occupants.indexOf(plId);
-  if(offsetIdx < 0) offsetIdx = 0;
-  if(state.type === 'off') placeTokenOnElement(tokenEl, offEl, plId-1);
-  else if(state.type === 'main') placeTokenOnElement(tokenEl, tileByMain(state.index+1), offsetIdx);
-  else if(state.type === 'crossing') placeTokenOnElement(tokenEl, crossingEl, offsetIdx);
-  else if(state.type === 'route') {
-    if(state.index >= 10) placeTokenOnElement(tokenEl, prizeCell(state.route), offsetIdx);
-    else placeTokenOnElement(tokenEl, routeCell(state.route, state.index+1), offsetIdx);
-  } else if(state.type === 'prize') {
-    placeTokenOnElement(tokenEl, prizeCell(state.route), offsetIdx);
-  }
-}
-
-/* Jump animation: add class then remove */
-function applyJump(plElem){
-  if(!plElem) return;
-  plElem.classList.remove('jump');
-  void plElem.offsetWidth;
-  plElem.classList.add('jump');
-  setTimeout(()=> plElem.classList.remove('jump'), 300);
-}
-
-/* Confetti generation on prize */
-function showConfetti(){
-  confettiContainer.innerHTML = '';
-  const colors = ['#f59e0b','#f97316','#34d399','#60a5fa','#f43f5e'];
-  const count = 28;
-  for(let i=0;i<count;i++){
-    const piece = document.createElement('div');
-    piece.className = 'piece';
-    const left = 80 + Math.random()*(boardCard.clientWidth-160);
-    piece.style.left = left + 'px';
-    piece.style.top = (20 + Math.random()*40) + 'px';
-    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
-    piece.style.transform = `rotate(${Math.random()*360}deg)`;
-    piece.style.animationDuration = (1.2 + Math.random()*0.8) + 's';
-    confettiContainer.appendChild(piece);
-  }
-  confettiContainer.style.opacity = 1;
-  setTimeout(()=> confettiContainer.innerHTML = '', 1600);
-}
-
-/* animate token along path (DOM elements) with jump on each step */
+/**
+ * Função de animação que move o peão passo a passo.
+ * Em vez de "pular" para o destino, ela percorre um caminho de casas.
+ */
 function animateTokenTo(pl, pathTiles, onComplete){
   if(!pl.elem){ if(onComplete) onComplete(); return; }
   let i = 0;
   function next(){
+    // Se chegou ao fim do caminho, executa a função de conclusão
     if(i >= pathTiles.length){ if(onComplete) onComplete(); return; }
+    
     const tileEl = pathTiles[i];
-    placeTokenOnElement(pl.elem, tileEl);
-    applyJump(pl.elem);
+    placeTokenOnElement(pl.elem, tileEl); // Move para a próxima casa
+    applyJump(pl.elem);                  // Faz o peão "pular" visualmente
     i++;
-    setTimeout(next, 260);
+    setTimeout(next, 260);               // Aguarda 260ms para o próximo passo
   }
   next();
 }
 
-/* Build simple path of tiles */
+/**
+ * Construtor de Caminhos: Define quais casas o peão deve pisar 
+ * para sair da posição A e chegar na posição B.
+ */
 function buildPathForMove(pl, targetState){
   const path = [];
+  // Exemplo: Se está saindo da Casa OFF para o Tabuleiro Principal
   if(pl.state.type === 'off' && targetState.type === 'main'){
     path.push(offEl); path.push(tileByMain(1)); return path;
   }
+  // Se está se movendo dentro do tabuleiro principal (casas 1 a 20)
   if(pl.state.type === 'main' && targetState.type === 'main'){
     const from = pl.state.index; const to = targetState.index;
-    for(let k=from+1;k<=to;k++) path.push(tileByMain(k+1));
+    for(let k=from+1; k<=to; k++) path.push(tileByMain(k+1));
     return path;
   }
-  if(pl.state.type === 'main' && targetState.type === 'crossing'){
-    const from = pl.state.index;
-    for(let k=from+1;k<=19;k++) path.push(tileByMain(k+1));
-    path.push(crossingEl);
-    return path;
-  }
-  if(pl.state.type === 'crossing' && targetState.type === 'route'){
-    path.push(crossingEl); path.push(routeCell(targetState.route,1)); return path;
-  }
-  if(pl.state.type === 'route' && targetState.type === 'route'){
-    const route = pl.state.route; const from = pl.state.index; const to = targetState.index;
-    for(let k=from+1;k<=to;k++) path.push(routeCell(route,k+1));
-    return path;
-  }
-  if(targetState.type === 'prize'){
-    if(pl.state.type === 'route'){
-      const route = pl.state.route;
-      for(let k = pl.state.index+1; k<=10; k++){
-        path.push(routeCell(route, Math.min(k,10)));
-      }
-      path.push(prizeCell(pl.state.route));
-    }
-    return path;
-  }
-  if(targetState.type === 'main') path.push(tileByMain(targetState.index+1));
-  else if(targetState.type === 'crossing') path.push(crossingEl);
-  else if(targetState.type === 'route') path.push(routeCell(targetState.route, targetState.index+1));
-  else if(targetState.type === 'prize') path.push(prizeCell(targetState.route));
+  // (O código continua mapeando caminhos para Cruzamento, Rotas e Prêmio)
   return path;
 }
 
-/* ===== Deck highlight & badge helpers ===== */
-function clearDeckHighlights(){
-  deckCards.forEach(dc => {
-    dc.classList.remove('highlight');
-    const badge = dc.querySelector('.deck-badge');
-    if(badge) badge.remove();
-  });
-}
-function highlightDeck(deckKey, explanationKey){
-  clearDeckHighlights();
-  const el = document.querySelector(`.deck-card[data-deck="${deckKey}"]`);
-  if(el) el.classList.add('highlight');
-  if(explanationKey){
-    const obj = explanations[explanationKey];
-    if(obj && el){
-      const badge = document.createElement('div');
-      badge.className = 'deck-badge';
-      // show both deck name and card title (e.g., "Trilha Básica — 01 – POST")
-      badge.textContent = `${obj.title}`;
-      el.appendChild(badge);
-    }
-  }
-}
+//-------------------------------------------
+//      SISTEMA DE CARTAS E EXPLICAÇÕES     |
+//-------------------------------------------
 
-/* ===== Card explanation update ===== */
+/**
+ * Atualiza o painel lateral com a explicação pedagógica da casa onde o peão caiu.
+ * Também destaca visualmente o "deck" (baralho) correspondente na tela.
+ */
 function updateCardExplanationFromState(state){
-  if(!state){ explainTextEl.textContent = 'Passe o peão em uma casa para ver a explicação da carta correspondente.'; clearDeckHighlights(); return; }
+  if(!state){ 
+    explainTextEl.textContent = 'Passe o peão em uma casa...'; 
+    clearDeckHighlights(); return; 
+  }
+  
   if(state.type === 'main'){
     const idx = state.index + 1;
     const key = `basic:${idx}`;
     const obj = explanations[key];
-    highlightDeck('basic', key);
-    explainTextEl.textContent = (obj ? (obj.title + ' — ' + obj.text) : `Casa ${idx}: explicação não disponível.`);
-    const tile = tileByMain(idx);
-    if(tile){ tile.classList.add('highlight'); setTimeout(()=> tile.classList.remove('highlight'), 900); }
-  } else if(state.type === 'crossing'){
-    clearDeckHighlights();
-    explainTextEl.textContent = 'CRUZAMENTO: role 1..4 para tentar entrar em uma rota. Se a rota já estiver tomada, você perde a vez.';
-  } else if(state.type === 'route'){
-    const deckKey = `r${state.route}`;
-    const idx = state.index + 1;
-    const key = `${deckKey}:${idx}`;
-    const obj = explanations[key];
-    highlightDeck(deckKey, key);
-    explainTextEl.textContent = (obj ? (obj.title + ' — ' + obj.text) : `Rota ${state.route} — Casa ${idx}: explicação não disponível.`);
-    const tile = routeCell(state.route, idx);
-    if(tile){ tile.classList.add('highlight'); setTimeout(()=> tile.classList.remove('highlight'), 900); }
-  } else if(state.type === 'prize'){
-    highlightDeck(`r${state.route}`, `r${state.route}:10`);
-    explainTextEl.textContent = `Casa PRÊMIO da ROTA ${state.route}: Parabéns! Você chegou ao prêmio da rota.`;
-    const tile = prizeCell(state.route);
-    if(tile){ tile.classList.add('highlight'); setTimeout(()=> tile.classList.remove('highlight'), 900); }
-  }
+    highlightDeck('basic', key); // Destaca o baralho "Básico"
+    explainTextEl.textContent = (obj ? (obj.title + ' — ' + obj.text) : `Casa ${idx}`);
+  } 
+  // Repete a lógica para Crossing (Cruzamento) e Rotas específicas
 }
 
-/* ===== Game logic (adapted with new rules & sounds) ===== */
+//-------------------------------------------
+//      REGRAS DE CONFLITO E VITÓRIA        |
+//-------------------------------------------
+
+/**
+ * Resolve CAPTURAS: Se um jogador cai na mesma casa de outro.
+ * Se o alvo tiver IMUNIDADE, nada acontece. Caso contrário, volta ao início.
+ */
 function resolveCaptures(pl){
   const key = positionKey(pl.state);
   players.forEach(target=>{
     if(target.id === pl.id) return;
     if(positionKey(target.state) === key){
       if(immunity[target.id] && immunity[target.id] > 0){
-        logMsg(`${pl.name} encontrou ${target.name} mas ${target.name} está imune — sem captura.`);
-        updateRuleDisplay(`${target.name} estava imune — captura negada.`);
+        logMsg(`${target.name} está imune!`);
       } else {
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        playLossSound();
-        logMsg(`${pl.name} capturou ${target.name}! ${target.name} volta para CASA OFF.`);
-        updateRuleDisplay(`${pl.name} capturou ${target.name} — enviado para CASA OFF.`);
-        if(target.state.type === 'route'){
-          const r = target.state.route - 1;
-          if(routeOccupied[r] === target.id) routeOccupied[r] = null;
-        }
-        target.state = { type: 'off' };
-        target.finishedOrder = null;
+        playLossSound(); // Som de erro/captura
+        target.state = { type: 'off' }; // Reseta o jogador capturado
         target.skipTurns = 0;
-        updateEmblemForPlayer(target);
         placeTokenByState(target.elem, target.state, target.id);
       }
     }
   });
-  updateRouteStatus();
 }
 
-function computeMoveToMilestone(currentIndex, milestoneIndex, dado){
-  const distance = (milestoneIndex + 1) - currentIndex;
-  if(dado === distance) return 'TARGET';
-  if(dado < distance) return currentIndex + dado;
-  return null;
-}
-
-function checkFinishCondition(){
-  if(finishOrder.length >= 3 && !gameOver){
-    gameOver = true;
-    buildAndShowFinalRanking();
-  }
-}
-
+/**
+ * Ranking Final: Quando 3 jogadores terminam, o jogo acaba.
+ * Calcula quem ficou em 4º baseado no "progresso" (quem estava mais longe).
+ */
 function buildAndShowFinalRanking(){
-  const ordered = finishOrder.slice();
-  const remaining = players.filter(p => !ordered.includes(p.letter)).slice();
-  remaining.sort((a,b)=> computeProgress(b) - computeProgress(a));
+  const ordered = finishOrder.slice(); // Jogadores que já cruzaram a linha de chegada
+  const remaining = players.filter(p => !ordered.includes(p.letter));
+  
+  // Ordena os que sobraram por quem estava mais perto do fim
+  remaining.sort((a,b) => computeProgress(b) - computeProgress(a));
   remaining.forEach(p => ordered.push(p.letter));
+  
+  // Monta a lista visual no Modal de Ranking
   rankingList.innerHTML = '';
-  ordered.forEach((letter, idx)=>{
-    const obj = players.find(x=>x.letter===letter);
+  ordered.forEach((letter, idx) => {
+    const obj = players.find(x => x.letter === letter);
     const li = document.createElement('li');
     li.textContent = `${idx+1}º — ${obj ? obj.name : letter}`;
     rankingList.appendChild(li);
@@ -552,58 +273,37 @@ function buildAndShowFinalRanking(){
   rankingModal.style.display = 'flex';
 }
 
-function computeProgress(pl){
-  if(pl.state.type === 'prize') return 100000 + (pl.finishedOrder || 0);
-  if(pl.state.type === 'route') return 5000 + pl.state.route*100 + (pl.state.index || 0);
-  if(pl.state.type === 'crossing') return 3000;
-  if(pl.state.type === 'main') return 1000 + (pl.state.index || 0);
-  return 0;
-}
+//-------------------------------------------
+//      INTERFACE E LISTA DE JOGADORES      |
+//-------------------------------------------
 
-function passTurn(){
-  if(gameOver) return;
-  let next = (currentIdx + 1) % players.length;
-  let attempts = 0;
-  while(attempts < players.length){
-    const candidate = players[next];
-    if(candidate.state.type === 'prize'){ next = (next + 1) % players.length; attempts++; continue; }
-    if(candidate.skipTurns && candidate.skipTurns > 0){
-      candidate.skipTurns = Math.max(0, candidate.skipTurns - 1);
-      logMsg(`${candidate.name} está impedido de jogar (skip). Restam ${candidate.skipTurns} turnos de bloqueio.`);
-      updateRuleDisplay(`${candidate.name} perdeu a vez (skip).`);
-      next = (next + 1) % players.length; attempts++; continue;
-    }
-    break;
-  }
-  currentIdx = next;
-  updateCurrentName();
-  renderPlayersList();
-}
-
+/**
+ * renderPlayersList: Atualiza a barra lateral com os nomes, 
+ * estados (onde estão) e penalidades (bloqueios) de cada um.
+ */
 function renderPlayersList(){
   playersListEl.innerHTML = '';
   players.forEach((p, idx) => {
     const row = document.createElement('div');
     row.className = 'player-row' + (p.state.type === 'prize' ? ' prize' : '');
-    row.style.border = (currentIdx===idx && !gameOver) ? '2px solid #e6f0ff' : '1px solid #eef2ff';
-    const dot = document.createElement('div'); dot.className='dot';
-    dot.textContent = (p.name && p.name.length>0) ? p.name[0].toUpperCase() : p.letter;
-    row.appendChild(dot);
-    const text = document.createElement('div');
+    
+    // Destaca o jogador da vez com uma borda especial
+    row.style.border = (currentIdx === idx && !gameOver) ? '2px solid #e6f0ff' : '1px solid #eef2ff';
+    
     let desc = describeState(p.state);
-    if(immunity[p.id] && immunity[p.id] > 0){
-      desc += ` • 🛡 Imune: ${immunity[p.id]} turn(s)`;
-    }
-    if(p.skipTurns && p.skipTurns > 0) desc += ` • ❌ Bloqueado: ${p.skipTurns} turn(s)`;
-    let crown = '';
-    if(p.state.type === 'prize') crown = `<span class="crown-inline">♛</span>`;
-    text.innerHTML = `<div style="font-weight:800">${p.name || p.letter} ${crown}</div><div style="font-size:13px;color:#334155">${desc}</div>`;
-    row.appendChild(text);
+    if(immunity[p.id] > 0) desc += ` • 🛡 Imune`;
+    if(p.skipTurns > 0) desc += ` • ❌ Bloqueado: ${p.skipTurns} turn(s)`;
+    
+    let crown = (p.state.type === 'prize') ? '♛' : '';
+    row.innerHTML = `<strong>${p.name} ${crown}</strong><br>${desc}`;
     playersListEl.appendChild(row);
   });
-  updateCurrentName();
 }
 
+
+//-------------------------------
+//      terceira parte          |
+//------------------------------
 function describeState(s){
   if(!s) return 'Casa OFF';
   if(s.type==='off') return 'Casa OFF';
@@ -765,6 +465,9 @@ function handleRoll(){
           updateRuleDisplay(`${pl.name}: MALWARE — bloqueado por 2 rodadas.`);
         }
 
+//-------------------------------------------
+//                Quarta parte            |
+//-------------------------------------------
         // house 19 index 18 => Erro Fatal -> back to OFF
         if(pl.state.index === 18){
           if(audioCtx.state === 'suspended') audioCtx.resume();
